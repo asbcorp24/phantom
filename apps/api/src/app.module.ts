@@ -9,5 +9,6 @@ import { CoursesModule } from './courses/courses.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { ProgressModule } from './progress/progress.module';
 import { TestsModule } from './tests/tests.module';
-@Module({imports:[PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule,ProgressModule,TestsModule],controllers:[HealthController]})
+import { CertificatesModule } from './certificates/certificates.module';
+@Module({imports:[PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule,ProgressModule,TestsModule,CertificatesModule],controllers:[HealthController]})
 export class AppModule {}
