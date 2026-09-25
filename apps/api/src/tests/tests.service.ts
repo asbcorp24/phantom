@@ -1,12 +1,13 @@
 import { BadRequestException,ForbiddenException,Injectable,NotFoundException } from '@nestjs/common';
 import { AttemptStatus,PublishStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CertificatesService } from '../certificates/certificates.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 
 @Injectable()
 export class TestsService {
- constructor(private prisma:PrismaService){}
+ constructor(private prisma:PrismaService,private certificates:CertificatesService){}
  async create(organizationId:string,versionId:string,dto:CreateTestDto){
   const v=await this.prisma.courseVersion.findFirst({where:{id:versionId,course:{organizationId}}});
   if(!v)throw new NotFoundException('Версия курса не найдена');
@@ -43,6 +44,12 @@ export class TestsService {
   }
   const score=attempt.test.questions.length?Math.round(correct*100/attempt.test.questions.length):0;
   const status=score>=attempt.test.passingScore?AttemptStatus.PASSED:AttemptStatus.FAILED;
-  return this.prisma.testAttempt.update({where:{id:attemptId},data:{answers:answers as any,score,status,finishedAt:new Date()},select:{id:true,status:true,score:true,finishedAt:true}});
+  const result=await this.prisma.testAttempt.update({where:{id:attemptId},data:{answers:answers as any,score,status,finishedAt:new Date()},select:{id:true,status:true,score:true,finishedAt:true}});
+  let certificate=null;
+  if(status===AttemptStatus.PASSED){
+   const assignment=await this.prisma.assignment.findFirst({where:{userId,courseVersionId:attempt.test.courseVersionId},orderBy:{assignedAt:'desc'}});
+   if(assignment)certificate=await this.certificates.issueForPassedCourse(assignment.organizationId,userId,assignment.courseId);
+  }
+  return {...result,certificate};
  }
 }
