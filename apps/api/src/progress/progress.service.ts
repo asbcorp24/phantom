@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ProgressService {
  constructor(private prisma:PrismaService){}
  async getAssignment(organizationId:string,userId:string,id:string){
-  const a=await this.prisma.assignment.findFirst({where:{id,organizationId,userId},include:{course:true,courseVersion:{include:{materials:{orderBy:{sortOrder:'asc'}}}}}});
+  const a=await this.prisma.assignment.findFirst({where:{id,organizationId,userId},include:{course:true,courseVersion:{include:{materials:{orderBy:{sortOrder:'asc'}},tests:{select:{id:true,title:true,passingScore:true,timeLimitSec:true,maxAttempts:true}}}}}});
   if(!a) throw new NotFoundException('Назначение не найдено');
   return a;
  }
