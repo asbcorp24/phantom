@@ -104,6 +104,7 @@ model User {
   assignments    Assignment[]
   attempts       TestAttempt[]
   auditEntries   AuditLog[]
+  certificates   Certificate[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   @@index([organizationId])
@@ -118,6 +119,7 @@ model Course {
   mandatory      Boolean      @default(false)
   versions       CourseVersion[]
   assignments    Assignment[]
+  certificates   Certificate[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   @@index([organizationId])
@@ -165,6 +167,7 @@ model Assignment {
   dueAt           DateTime?
   completedAt     DateTime?
   progress        Int              @default(0)
+  certificate     Certificate?
   @@index([organizationId, userId])
 }
 
@@ -210,6 +213,23 @@ model TestAttempt {
   finishedAt DateTime?
   answers    Json?
   @@index([userId, testId])
+}
+
+model Certificate {
+  id             String       @id @default(uuid())
+  organizationId String
+  userId         String
+  courseId       String
+  assignmentId   String       @unique
+  number         String       @unique
+  issuedAt       DateTime     @default(now())
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  course         Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  assignment     Assignment   @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  @@index([organizationId, userId])
 }
 
 model AuditLog {
