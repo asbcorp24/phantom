@@ -18,7 +18,10 @@ export class TestsService {
   const test=await this.prisma.test.findFirst({where:{id:testId,courseVersion:{course:{organizationId},status:PublishStatus.DRAFT}}});
   if(!test)throw new NotFoundException('Черновик теста не найден');
   const count=await this.prisma.question.count({where:{testId}});
-  if(!dto.options.some(o=>o.correct))throw new BadRequestException('Нужен хотя бы один правильный ответ');
+  if(dto.options.length<2)throw new BadRequestException('Нужно минимум два варианта ответа');
+  const correctCount=dto.options.filter(o=>o.correct).length;
+  if(!correctCount)throw new BadRequestException('Нужен хотя бы один правильный ответ');
+  if(!dto.multiple&&correctCount!==1)throw new BadRequestException('Для одиночного выбора нужен ровно один правильный ответ');
   return this.prisma.question.create({data:{testId,text:dto.text,multiple:dto.multiple,sortOrder:count,options:{create:dto.options}}});
  }
  async adminGet(organizationId:string,testId:string){
@@ -34,12 +37,18 @@ export class TestsService {
  async start(organizationId:string,userId:string,assignmentId:string,testId:string){
   const a=await this.prisma.assignment.findFirst({where:{id:assignmentId,organizationId,userId,courseVersion:{tests:{some:{id:testId}}}}});
   if(!a)throw new ForbiddenException();
+  if(a.progress<100)throw new BadRequestException('Сначала завершите обязательные материалы');
   const test=await this.prisma.test.findUnique({where:{id:testId}});
   if(!test)throw new NotFoundException();
+  const active=await this.prisma.testAttempt.findFirst({where:{testId,userId,status:AttemptStatus.IN_PROGRESS},orderBy:{startedAt:'desc'}});
+  const safe=await this.prisma.test.findUnique({where:{id:testId},select:{id:true,title:true,passingScore:true,timeLimitSec:true,maxAttempts:true,questions:{orderBy:{sortOrder:'asc'},select:{id:true,text:true,multiple:true,options:{select:{id:true,text:true}}}}}});
+  if(active){
+   if(!test.timeLimitSec||(Date.now()-active.startedAt.getTime())/1000<=test.timeLimitSec)return {attemptId:active.id,test:safe};
+   await this.prisma.testAttempt.update({where:{id:active.id},data:{status:AttemptStatus.FAILED,score:0,finishedAt:new Date()}});
+  }
   const used=await this.prisma.testAttempt.count({where:{testId,userId}});
   if(test.maxAttempts&&used>=test.maxAttempts)throw new BadRequestException('Количество попыток исчерпано');
   const attempt=await this.prisma.testAttempt.create({data:{testId,userId}});
-  const safe=await this.prisma.test.findUnique({where:{id:testId},select:{id:true,title:true,passingScore:true,timeLimitSec:true,maxAttempts:true,questions:{orderBy:{sortOrder:'asc'},select:{id:true,text:true,multiple:true,options:{select:{id:true,text:true}}}}}});
   return {attemptId:attempt.id,test:safe};
  }
  async submit(userId:string,attemptId:string,answers:{questionId:string;optionIds:string[]}[]){
