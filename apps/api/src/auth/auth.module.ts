@@ -5,7 +5,13 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
-  imports: [JwtModule.register({ secret: process.env.JWT_SECRET || 'change_me', signOptions: { expiresIn: '8h' } })],
+  imports: [JwtModule.registerAsync({
+    useFactory: () => {
+      const secret = process.env.JWT_SECRET;
+      if (!secret || secret.length < 32) throw new Error('JWT_SECRET must be set and contain at least 32 characters');
+      return { secret, signOptions: { expiresIn: '8h' } };
+    },
+  })],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
   exports: [AuthService, JwtModule],
