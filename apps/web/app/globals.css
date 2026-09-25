@@ -2,3 +2,5 @@
 .error{color:#b42318!important;background:#fff0ee;padding:10px 12px;border-radius:9px}
 .adminPage{max-width:1250px;margin:auto;padding:38px}.adminPage>header{display:flex;align-items:center;justify-content:space-between;margin-bottom:30px}.adminPage h1{margin:8px 0;font-size:36px}.adminGrid{display:grid;grid-template-columns:360px 1fr;gap:24px;align-items:start}.panel{background:white;border:1px solid #e6eaf2;border-radius:20px;padding:28px}.org{display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid #edf0f5}.org:last-child{border:0}.org b,.org small{display:block}.org small{margin-top:5px;color:#8490a5}.org div:last-child{display:flex;gap:20px;color:#657086;font-size:14px}
 @media(max-width:800px){.adminPage{padding:20px}.adminGrid{grid-template-columns:1fr}.org{align-items:flex-start;gap:14px}.org div:last-child{display:grid;gap:4px}}
+
+.card.compact{width:100%;padding:24px}.topGap{margin-top:24px!important}.card select{padding:14px;border:1px solid #dbe1ee;border-radius:10px;background:white;font-size:15px}.panel h2 small{font-weight:400;color:#8490a5}
