@@ -2,10 +2,11 @@ import { Injectable,UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 @Injectable()
 export class AuthService {
  private readonly loginAttempts=new Map<string,{count:number;blockedUntil:number}>();
- constructor(private prisma:PrismaService,private jwt:JwtService){}
+ constructor(private prisma:PrismaService,private jwt:JwtService,private audit:AuditService){}
  async login(email:string,password:string){
   const key=email.trim().toLowerCase();
   const now=Date.now();
