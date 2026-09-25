@@ -15,7 +15,7 @@ export default function Company(){
  useEffect(()=>{load()},[]);
  async function addDepartment(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const r=await fetch(API+'/api/departments',{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({name:f.get('name')})});if(!r.ok){setError('Не удалось создать подразделение');return;}e.currentTarget.reset();load();}
  async function addUser(e:FormEvent<HTMLFormElement>){e.preventDefault();const f=new FormData(e.currentTarget);const body=Object.fromEntries(f);if(!body.departmentId)delete body.departmentId;const r=await fetch(API+'/api/users',{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify(body)});const x=await r.json();if(!r.ok){setError(Array.isArray(x.message)?x.message.join(', '):x.message);return;}e.currentTarget.reset();setError('');load();}
- return <main className="adminPage"><header><div><div className="brand">PHANTOM</div><h1>Администрирование компании</h1></div><a href="/dashboard">Личный кабинет</a></header>
+ return <main className="adminPage"><header><div><div className="brand">PHANTOM</div><h1>Администрирование компании</h1></div><div className="headerLinks"><a href="/company/courses">Курсы</a><a href="/company/reports">Отчёты по обучению</a><a href="/dashboard">Личный кабинет</a></div></header>
  {error&&<p className="error">{error}</p>}
  <section className="adminGrid"><div>
   <form className="card compact" onSubmit={addDepartment}><h2>Подразделение</h2><label>Название<input name="name" required/></label><button>Добавить</button></form>
