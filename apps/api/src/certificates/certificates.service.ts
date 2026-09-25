@@ -7,14 +7,15 @@ export class CertificatesService {
  async issueForPassedCourse(organizationId:string,userId:string,courseId:string){
   const assignment=await this.prisma.assignment.findFirst({where:{organizationId,userId,courseId},include:{courseVersion:{include:{tests:true}}},orderBy:{assignedAt:'desc'}});
   if(!assignment)throw new NotFoundException('Назначение не найдено');
+  if(assignment.progress<100)return null;
   const tests=assignment.courseVersion.tests;
   if(tests.length){
-   const passed=await this.prisma.testAttempt.count({where:{userId,testId:{in:tests.map(t=>t.id)},status:'PASSED'}});
-   if(passed<tests.length)return null;
+   const passed=await this.prisma.testAttempt.findMany({where:{userId,testId:{in:tests.map(t=>t.id)},status:'PASSED'},select:{testId:true},distinct:['testId']});
+   if(passed.length<tests.length)return null;
   }
   const existing=await this.prisma.certificate.findUnique({where:{assignmentId:assignment.id}});
   if(existing)return existing;
-  const number='PH-'+new Date().getFullYear()+'-'+crypto.randomUUID().slice(0,8).toUpperCase();
+  const number='PH-'+new Date().getFullYear()+'-'+randomUUID().slice(0,8).toUpperCase();
   return this.prisma.certificate.create({data:{organizationId,userId,courseId,assignmentId:assignment.id,number}});
  }
  async getMine(organizationId:string,userId:string,id:string){
