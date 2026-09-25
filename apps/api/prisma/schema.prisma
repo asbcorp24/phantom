@@ -1,0 +1,227 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  EMPLOYEE
+  CURATOR
+  COMPANY_ADMIN
+  PLATFORM_OWNER
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  INVITED
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  DISABLED
+}
+
+enum AssignmentStatus {
+  ASSIGNED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  PASSED
+  FAILED
+}
+
+model Organization {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  active      Boolean      @default(true)
+  users       User[]
+  departments Department[]
+  groups      Group[]
+  courses     Course[]
+  assignments Assignment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Department {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  users          User[]
+  groups         Group[]
+  createdAt      DateTime     @default(now())
+  @@unique([organizationId, name])
+}
+
+model Group {
+  id             String       @id @default(uuid())
+  organizationId String
+  departmentId   String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  name           String
+  members        GroupMember[]
+  createdAt      DateTime     @default(now())
+  @@unique([organizationId, name])
+}
+
+model GroupMember {
+  groupId   String
+  userId    String
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@id([groupId, userId])
+}
+
+model User {
+  id             String        @id @default(uuid())
+  organizationId String?
+  departmentId   String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  department     Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  email          String        @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  middleName     String?
+  position       String?
+  role           UserRole      @default(EMPLOYEE)
+  status         UserStatus    @default(ACTIVE)
+  twoFactorEnabled Boolean     @default(false)
+  groups         GroupMember[]
+  assignments    Assignment[]
+  attempts       TestAttempt[]
+  auditEntries   AuditLog[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  @@index([organizationId])
+}
+
+model Course {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  title          String
+  description    String?
+  mandatory      Boolean      @default(false)
+  versions       CourseVersion[]
+  assignments    Assignment[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  @@index([organizationId])
+}
+
+model CourseVersion {
+  id          String        @id @default(uuid())
+  courseId    String
+  course      Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  version     Int
+  status      PublishStatus @default(DRAFT)
+  publishedAt DateTime?
+  materials   Material[]
+  tests       Test[]
+  assignments Assignment[]
+  createdAt   DateTime      @default(now())
+  @@unique([courseId, version])
+}
+
+model Material {
+  id              String        @id @default(uuid())
+  courseVersionId String
+  courseVersion   CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  title           String
+  type            String
+  content         String?
+  filePath        String?
+  sortOrder       Int           @default(0)
+  required        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+}
+
+model Assignment {
+  id              String           @id @default(uuid())
+  organizationId  String
+  userId          String
+  courseId        String
+  courseVersionId String
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course          Course           @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  courseVersion   CourseVersion    @relation(fields: [courseVersionId], references: [id], onDelete: Restrict)
+  status          AssignmentStatus @default(ASSIGNED)
+  assignedAt      DateTime         @default(now())
+  dueAt           DateTime?
+  completedAt     DateTime?
+  progress        Int              @default(0)
+  @@index([organizationId, userId])
+}
+
+model Test {
+  id              String        @id @default(uuid())
+  courseVersionId String
+  courseVersion   CourseVersion @relation(fields: [courseVersionId], references: [id], onDelete: Cascade)
+  title           String
+  passingScore    Int
+  timeLimitSec    Int?
+  maxAttempts     Int?
+  questions       Question[]
+  attempts        TestAttempt[]
+}
+
+model Question {
+  id        String   @id @default(uuid())
+  testId    String
+  test      Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  text      String
+  multiple  Boolean  @default(false)
+  sortOrder Int      @default(0)
+  options   AnswerOption[]
+}
+
+model AnswerOption {
+  id         String   @id @default(uuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  correct    Boolean  @default(false)
+}
+
+model TestAttempt {
+  id         String        @id @default(uuid())
+  testId     String
+  userId     String
+  test       Test          @relation(fields: [testId], references: [id], onDelete: Restrict)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status     AttemptStatus @default(IN_PROGRESS)
+  score      Int?
+  startedAt  DateTime      @default(now())
+  finishedAt DateTime?
+  answers    Json?
+  @@index([userId, testId])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  organizationId String?
+  actorId        String?
+  actor          User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action         String
+  entityType     String
+  entityId       String?
+  result         String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  @@index([organizationId, createdAt])
+}
