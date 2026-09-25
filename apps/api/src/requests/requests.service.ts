@@ -1,9 +1,10 @@
 import { ForbiddenException,Injectable,NotFoundException } from '@nestjs/common';
 import { RequestStatus,UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 @Injectable()
 export class RequestsService {
- constructor(private prisma:PrismaService){}
+ constructor(private prisma:PrismaService,private notifications:NotificationsService){}
  create(organizationId:string,authorId:string,subject:string,message:string){
   return this.prisma.supportRequest.create({data:{organizationId,authorId,subject,messages:{create:{senderId:authorId,text:message}}},include:{messages:true}});
  }
@@ -25,6 +26,8 @@ export class RequestsService {
   if(user.role===UserRole.CURATOR&&!r.curatorId)await this.prisma.supportRequest.update({where:{id},data:{curatorId:user.id,status:RequestStatus.IN_PROGRESS}});
   else if(r.status===RequestStatus.CLOSED)await this.prisma.supportRequest.update({where:{id},data:{status:RequestStatus.IN_PROGRESS}});
   await this.prisma.requestMessage.create({data:{requestId:id,senderId:user.id,text}});
+  if(user.id!==r.authorId)await this.notifications.create(organizationId,r.authorId,'MESSAGE','Новый ответ по обращению',r.subject,undefined,{requestId:id});
+  else if(r.curatorId)await this.notifications.create(organizationId,r.curatorId,'MESSAGE','Новое сообщение в обращении',r.subject,undefined,{requestId:id});
   return this.get(organizationId,user,id);
  }
  async close(organizationId:string,user:any,id:string){
