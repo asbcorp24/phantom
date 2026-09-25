@@ -33,6 +33,12 @@ enum AssignmentStatus {
   OVERDUE
 }
 
+enum RequestStatus {
+  NEW
+  IN_PROGRESS
+  CLOSED
+}
+
 enum AttemptStatus {
   IN_PROGRESS
   PASSED
@@ -105,6 +111,9 @@ model User {
   attempts       TestAttempt[]
   auditEntries   AuditLog[]
   certificates   Certificate[]
+  createdRequests SupportRequest[] @relation("RequestAuthor")
+  assignedRequests SupportRequest[] @relation("RequestCurator")
+  messages        RequestMessage[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   @@index([organizationId])
@@ -120,6 +129,7 @@ model Course {
   versions       CourseVersion[]
   assignments    Assignment[]
   certificates   Certificate[]
+  supportRequests SupportRequest[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   @@index([organizationId])
@@ -213,6 +223,33 @@ model TestAttempt {
   finishedAt DateTime?
   answers    Json?
   @@index([userId, testId])
+}
+
+model SupportRequest {
+  id             String        @id @default(uuid())
+  organizationId String
+  authorId       String
+  curatorId      String?
+  subject        String
+  status         RequestStatus @default(NEW)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organization   Organization  @relation(fields:[organizationId],references:[id],onDelete:Cascade)
+  author         User          @relation("RequestAuthor",fields:[authorId],references:[id],onDelete:Restrict)
+  curator        User?         @relation("RequestCurator",fields:[curatorId],references:[id],onDelete:SetNull)
+  messages       RequestMessage[]
+  @@index([organizationId,status])
+}
+
+model RequestMessage {
+  id        String         @id @default(uuid())
+  requestId String
+  senderId  String
+  text      String
+  createdAt DateTime       @default(now())
+  request   SupportRequest @relation(fields:[requestId],references:[id],onDelete:Cascade)
+  sender    User           @relation(fields:[senderId],references:[id],onDelete:Restrict)
+  @@index([requestId,createdAt])
 }
 
 model Certificate {
