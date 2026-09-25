@@ -21,6 +21,16 @@ export class TestsService {
   if(!dto.options.some(o=>o.correct))throw new BadRequestException('Нужен хотя бы один правильный ответ');
   return this.prisma.question.create({data:{testId,text:dto.text,multiple:dto.multiple,sortOrder:count,options:{create:dto.options}}});
  }
+ async adminGet(organizationId:string,testId:string){
+  const test=await this.prisma.test.findFirst({where:{id:testId,courseVersion:{course:{organizationId}}},include:{questions:{orderBy:{sortOrder:'asc'},include:{options:true}}}});
+  if(!test)throw new NotFoundException('Тест не найден');
+  return test;
+ }
+ async results(organizationId:string,testId:string){
+  const test=await this.prisma.test.findFirst({where:{id:testId,courseVersion:{course:{organizationId}}}});
+  if(!test)throw new NotFoundException('Тест не найден');
+  return this.prisma.testAttempt.findMany({where:{testId},select:{id:true,status:true,score:true,startedAt:true,finishedAt:true,user:{select:{id:true,firstName:true,lastName:true,email:true}}},orderBy:{startedAt:'desc'}});
+ }
  async start(organizationId:string,userId:string,assignmentId:string,testId:string){
   const a=await this.prisma.assignment.findFirst({where:{id:assignmentId,organizationId,userId,courseVersion:{tests:{some:{id:testId}}}}});
   if(!a)throw new ForbiddenException();
