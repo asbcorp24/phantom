@@ -14,6 +14,7 @@ export class CoursesController {
  constructor(private service:CoursesService){}
  @Get() list(@Req() req:any){return this.service.list(req.user.organizationId);}
  @Post() create(@Req() req:any,@Body() dto:CreateCourseDto){return this.service.create(req.user.organizationId,dto);}
+ @Post(':id/new-version') newVersion(@Req() req:any,@Param('id') id:string){return this.service.createNextVersion(req.user.organizationId,id,req.user.id);}
  @Post('versions/:id/materials') material(@Req() req:any,@Param('id') id:string,@Body() dto:CreateMaterialDto){return this.service.addMaterial(req.user.organizationId,id,dto);}
  @Post('versions/:id/publish') publish(@Req() req:any,@Param('id') id:string){return this.service.publish(req.user.organizationId,id,req.user.id);}
 }
