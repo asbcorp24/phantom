@@ -2,11 +2,12 @@ import { BadRequestException,Injectable,NotFoundException } from '@nestjs/common
 import { PublishStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AssignmentsService {
- constructor(private prisma:PrismaService,private notifications:NotificationsService){}
- async create(organizationId:string,userId:string,courseId:string,dueAt?:string){
+ constructor(private prisma:PrismaService,private notifications:NotificationsService,private audit:AuditService){}
+ async create(organizationId:string,userId:string,courseId:string,dueAt?:string,actorId?:string){
   const user=await this.prisma.user.findFirst({where:{id:userId,organizationId}});
   if(!user) throw new NotFoundException('Сотрудник не найден');
   const course=await this.prisma.course.findFirst({where:{id:courseId,organizationId},include:{versions:{where:{status:PublishStatus.PUBLISHED},orderBy:{version:'desc'},take:1}}});
@@ -14,6 +15,7 @@ export class AssignmentsService {
   const v=course.versions[0];
   const assignment=await this.prisma.assignment.create({data:{organizationId,userId,courseId,courseVersionId:v.id,dueAt:dueAt?new Date(dueAt):undefined}});
   await this.notifications.create(organizationId,userId,'ASSIGNMENT','Назначена программа обучения',course.title,'assignment:'+assignment.id,{assignmentId:assignment.id});
+  await this.audit.write(actorId??null,organizationId,'COURSE_ASSIGNED','Assignment',assignment.id,'SUCCESS',{userId,courseId});
   return assignment;
  }
  listForUser(organizationId:string,userId:string){
