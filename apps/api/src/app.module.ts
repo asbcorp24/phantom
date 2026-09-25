@@ -15,5 +15,6 @@ import { ReportsModule } from './reports/reports.module';
 import { RequestsModule } from './requests/requests.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AuditModule } from './audit/audit.module';
-@Module({imports:[ScheduleModule.forRoot(),PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule,ProgressModule,TestsModule,CertificatesModule,ReportsModule,RequestsModule,NotificationsModule,AuditModule],controllers:[HealthController]})
+import { GroupsModule } from './groups/groups.module';
+@Module({imports:[ScheduleModule.forRoot(),PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule,ProgressModule,TestsModule,CertificatesModule,ReportsModule,RequestsModule,NotificationsModule,AuditModule,GroupsModule],controllers:[HealthController]})
 export class AppModule {}
