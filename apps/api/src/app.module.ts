@@ -7,5 +7,6 @@ import { AuthModule } from './auth/auth.module';
 import { DepartmentsModule } from './departments/departments.module';
 import { CoursesModule } from './courses/courses.module';
 import { AssignmentsModule } from './assignments/assignments.module';
-@Module({imports:[PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule],controllers:[HealthController]})
+import { ProgressModule } from './progress/progress.module';
+@Module({imports:[PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule,ProgressModule],controllers:[HealthController]})
 export class AppModule {}
