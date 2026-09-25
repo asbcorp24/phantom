@@ -37,4 +37,14 @@ export class AuthService {
   return {enabled:true};
  }
 
+ async verifyTwoFactor(challengeToken:string,code:string){
+  let payload:any;
+  try{payload=await this.jwt.verifyAsync(challengeToken);}catch{throw new UnauthorizedException('Сессия подтверждения истекла');}
+  if(payload.purpose!=='2fa')throw new UnauthorizedException();
+  const user=await this.prisma.user.findUnique({where:{id:payload.sub}});
+  if(!user?.twoFactorEnabled||!user.twoFactorSecret||!authenticator.check(code,user.twoFactorSecret))throw new UnauthorizedException('Неверный код');
+  await this.audit.write(user.id,user.organizationId,'LOGIN_2FA','User',user.id);
+  return {accessToken:await this.jwt.signAsync({sub:user.id,role:user.role,organizationId:user.organizationId}),user:{id:user.id,email:user.email,firstName:user.firstName,lastName:user.lastName,role:user.role,organizationId:user.organizationId}};
+ }
+
 }
