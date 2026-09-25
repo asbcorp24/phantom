@@ -22,4 +22,19 @@ export class AuthService {
   this.loginAttempts.delete(key);
   return {accessToken:await this.jwt.signAsync({sub:user.id,role:user.role,organizationId:user.organizationId}),user:{id:user.id,email:user.email,firstName:user.firstName,lastName:user.lastName,role:user.role,organizationId:user.organizationId}};
  }
+ async setupTwoFactor(userId:string){
+  const user=await this.prisma.user.findUnique({where:{id:userId}});
+  if(!user)throw new UnauthorizedException();
+  const secret=authenticator.generateSecret();
+  await this.prisma.user.update({where:{id:userId},data:{twoFactorPendingSecret:secret}});
+  return {secret,otpauth:authenticator.keyuri(user.email,'PHANTOM',secret)};
+ }
+ async enableTwoFactor(userId:string,code:string){
+  const user=await this.prisma.user.findUnique({where:{id:userId}});
+  if(!user?.twoFactorPendingSecret||!authenticator.check(code,user.twoFactorPendingSecret))throw new UnauthorizedException('Неверный код подтверждения');
+  await this.prisma.user.update({where:{id:userId},data:{twoFactorSecret:user.twoFactorPendingSecret,twoFactorPendingSecret:null,twoFactorEnabled:true}});
+  await this.audit.write(user.id,user.organizationId,'2FA_ENABLED','User',user.id);
+  return {enabled:true};
+ }
+
 }
