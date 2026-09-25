@@ -8,5 +8,6 @@ import { DepartmentsModule } from './departments/departments.module';
 import { CoursesModule } from './courses/courses.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { ProgressModule } from './progress/progress.module';
-@Module({imports:[PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule,ProgressModule],controllers:[HealthController]})
+import { TestsModule } from './tests/tests.module';
+@Module({imports:[PrismaModule,AuthModule,OrganizationsModule,UsersModule,DepartmentsModule,CoursesModule,AssignmentsModule,ProgressModule,TestsModule],controllers:[HealthController]})
 export class AppModule {}
