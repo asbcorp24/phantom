@@ -114,6 +114,8 @@ model User {
   role           UserRole      @default(EMPLOYEE)
   status         UserStatus    @default(ACTIVE)
   twoFactorEnabled Boolean     @default(false)
+  twoFactorSecret  String?
+  twoFactorPendingSecret String?
   groups         GroupMember[]
   assignments    Assignment[]
   attempts       TestAttempt[]
