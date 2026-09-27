@@ -2,9 +2,10 @@ import { ForbiddenException,Injectable,NotFoundException } from '@nestjs/common'
 import { RequestStatus,UserRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../audit/audit.service';
 @Injectable()
 export class RequestsService {
- constructor(private prisma:PrismaService,private notifications:NotificationsService){}
+ constructor(private prisma:PrismaService,private notifications:NotificationsService,private audit:AuditService){}
  create(organizationId:string,authorId:string,subject:string,message:string){
   return this.prisma.supportRequest.create({data:{organizationId,authorId,subject,messages:{create:{senderId:authorId,text:message}}},include:{messages:true}});
  }
@@ -34,14 +35,18 @@ export class RequestsService {
  async close(organizationId:string,user:any,id:string){
   await this.get(organizationId,user,id);
   if(user.role===UserRole.EMPLOYEE)throw new ForbiddenException();
-  return this.prisma.supportRequest.update({where:{id},data:{status:RequestStatus.CLOSED}});
+  const updated=await this.prisma.supportRequest.update({where:{id},data:{status:RequestStatus.CLOSED}});
+  await this.audit.write(user.id,organizationId,'REQUEST_CLOSED','SupportRequest',id);
+  return updated;
  }
  async reassign(organizationId:string,user:any,id:string,curatorId:string){
   if(user.role!==UserRole.COMPANY_ADMIN)throw new ForbiddenException();
   await this.get(organizationId,user,id);
   const curator=await this.prisma.user.findFirst({where:{id:curatorId,organizationId,role:UserRole.CURATOR,status:'ACTIVE'}});
   if(!curator)throw new NotFoundException('Куратор не найден');
-  return this.prisma.supportRequest.update({where:{id},data:{curatorId,status:RequestStatus.IN_PROGRESS}});
+  const updated=await this.prisma.supportRequest.update({where:{id},data:{curatorId,status:RequestStatus.IN_PROGRESS}});
+  await this.audit.write(user.id,organizationId,'REQUEST_REASSIGNED','SupportRequest',id,'SUCCESS',{curatorId});
+  return updated;
  }
 
 }
