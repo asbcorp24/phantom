@@ -45,22 +45,22 @@ export class TestsService {
   }
   const test=await this.prisma.test.findUnique({where:{id:testId}});
   if(!test)throw new NotFoundException();
-  const active=await this.prisma.testAttempt.findFirst({where:{testId,userId,status:AttemptStatus.IN_PROGRESS},orderBy:{startedAt:'desc'}});
+  const active=await this.prisma.testAttempt.findFirst({where:{testId,userId,assignmentId,status:AttemptStatus.IN_PROGRESS},orderBy:{startedAt:'desc'}});
   const safe=await this.prisma.test.findUnique({where:{id:testId},select:{id:true,title:true,passingScore:true,timeLimitSec:true,maxAttempts:true,questions:{orderBy:{sortOrder:'asc'},select:{id:true,text:true,multiple:true,options:{select:{id:true,text:true}}}}}});
   if(active){
    if(!test.timeLimitSec||(Date.now()-active.startedAt.getTime())/1000<=test.timeLimitSec)return {attemptId:active.id,test:safe};
    await this.prisma.testAttempt.update({where:{id:active.id},data:{status:AttemptStatus.FAILED,score:0,finishedAt:new Date()}});
   }
   if(test.retryIntervalSec){
-   const last=await this.prisma.testAttempt.findFirst({where:{testId,userId,status:AttemptStatus.FAILED,finishedAt:{not:null}},orderBy:{finishedAt:'desc'}});
+   const last=await this.prisma.testAttempt.findFirst({where:{testId,userId,assignmentId,status:AttemptStatus.FAILED,finishedAt:{not:null}},orderBy:{finishedAt:'desc'}});
    if(last?.finishedAt){
     const availableAt=new Date(last.finishedAt.getTime()+test.retryIntervalSec*1000);
     if(availableAt.getTime()>Date.now())throw new BadRequestException('Повторная попытка будет доступна '+availableAt.toISOString());
    }
   }
-  const used=await this.prisma.testAttempt.count({where:{testId,userId}});
+  const used=await this.prisma.testAttempt.count({where:{testId,userId,assignmentId}});
   if(test.maxAttempts&&used>=test.maxAttempts)throw new BadRequestException('Количество попыток исчерпано');
-  const attempt=await this.prisma.testAttempt.create({data:{testId,userId}});
+  const attempt=await this.prisma.testAttempt.create({data:{testId,userId,assignmentId}});
   return {attemptId:attempt.id,test:safe};
  }
  async submit(userId:string,attemptId:string,answers:{questionId:string;optionIds:string[]}[]){
