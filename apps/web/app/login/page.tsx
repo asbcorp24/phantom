@@ -29,6 +29,12 @@ export default function Login(){
    const r=await fetch((process.env.NEXT_PUBLIC_API_URL||'http://localhost:3001')+'/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:fd.get('email'),password:fd.get('password')})});
    const data=await r.json();
    if(!r.ok) throw new Error(data.message||'Ошибка входа');
+   if(data.requiresTwoFactorSetup){
+    setSetupToken(data.setupToken);
+    const sr=await fetch((process.env.NEXT_PUBLIC_API_URL||'http://localhost:3001')+'/api/auth/2fa/setup-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({setupToken:data.setupToken})});
+    const sd=await sr.json();if(!sr.ok)throw new Error(sd.message||'Ошибка настройки 2FA');
+    setSetupSecret(sd.secret);setLoading(false);return;
+   }
    if(data.requiresTwoFactor){setChallenge(data.challengeToken);setLoading(false);return;}
    localStorage.setItem('phantom_token',data.accessToken);
    localStorage.setItem('phantom_user',JSON.stringify(data.user));
