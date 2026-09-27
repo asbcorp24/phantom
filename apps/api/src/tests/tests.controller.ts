@@ -7,6 +7,7 @@ import { TestsService } from './tests.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { SubmitAttemptDto } from './dto/submit-attempt.dto';
+import { ChangeAttemptResultDto } from './dto/change-attempt-result.dto';
 
 @UseGuards(JwtAuthGuard,RolesGuard)
 @Controller('tests')
@@ -24,4 +25,6 @@ export class TestsController {
  start(@Req() req:any,@Param('testId') testId:string,@Param('assignmentId') assignmentId:string){return this.service.start(req.user.organizationId,req.user.id,assignmentId,testId);}
  @Roles(UserRole.EMPLOYEE,UserRole.CURATOR,UserRole.COMPANY_ADMIN) @Post('attempts/:attemptId/submit')
  submit(@Req() req:any,@Param('attemptId') attemptId:string,@Body() dto:SubmitAttemptDto){return this.service.submit(req.user.id,attemptId,dto.answers);}
+ @Roles(UserRole.COMPANY_ADMIN) @Post('attempts/:attemptId/result')
+ changeResult(@Req() req:any,@Param('attemptId') attemptId:string,@Body() dto:ChangeAttemptResultDto){return this.service.changeResult(req.user.organizationId,req.user.id,attemptId,dto.status,dto.score,dto.reason);}
 }
