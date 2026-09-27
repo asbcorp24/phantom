@@ -128,6 +128,7 @@ model User {
   assignedRequests SupportRequest[] @relation("RequestCurator")
   messages        RequestMessage[]
   notifications   Notification[]
+  materialProgress MaterialProgress[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   @@index([organizationId])
@@ -172,7 +173,23 @@ model Material {
   filePath        String?
   sortOrder       Int           @default(0)
   required        Boolean       @default(true)
+  progress        MaterialProgress[]
   createdAt       DateTime      @default(now())
+}
+
+model MaterialProgress {
+  id           String     @id @default(uuid())
+  materialId   String
+  assignmentId String
+  userId       String
+  viewed       Boolean    @default(false)
+  position     Int        @default(0)
+  updatedAt    DateTime   @updatedAt
+  material     Material   @relation(fields:[materialId],references:[id],onDelete:Cascade)
+  assignment   Assignment @relation(fields:[assignmentId],references:[id],onDelete:Cascade)
+  user         User       @relation(fields:[userId],references:[id],onDelete:Cascade)
+  @@unique([assignmentId,materialId])
+  @@index([userId,assignmentId])
 }
 
 model Assignment {
@@ -191,6 +208,7 @@ model Assignment {
   completedAt     DateTime?
   progress        Int              @default(0)
   certificate     Certificate?
+  materialProgress MaterialProgress[]
   @@index([organizationId, userId])
 }
 
