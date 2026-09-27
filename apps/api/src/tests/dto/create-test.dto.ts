@@ -4,4 +4,5 @@ export class CreateTestDto {
  @IsInt() @Min(1) @Max(100) passingScore!:number;
  @IsOptional() @IsInt() @Min(1) timeLimitSec?:number;
  @IsOptional() @IsInt() @Min(1) maxAttempts?:number;
+ @IsOptional() @IsInt() @Min(0) retryIntervalSec?:number;
 }
