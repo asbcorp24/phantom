@@ -13,7 +13,7 @@ export class AuthService {
   const now=Date.now();
   const state=this.loginAttempts.get(key);
   if(state?.blockedUntil&&state.blockedUntil>now) throw new UnauthorizedException('Слишком много попыток. Повторите вход позже');
-  const user=await this.prisma.user.findUnique({where:{email:email.toLowerCase()}});
+  const user=await this.prisma.user.findUnique({where:{email:key}});
   if(!user||user.status!=='ACTIVE'||!(await bcrypt.compare(password,user.passwordHash))){
    const next=(state?.blockedUntil&&state.blockedUntil<=now)?1:(state?.count??0)+1;
    this.loginAttempts.set(key,{count:next,blockedUntil:next>=5?now+15*60*1000:0});
