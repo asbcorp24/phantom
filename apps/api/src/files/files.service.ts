@@ -1,6 +1,7 @@
 import {ForbiddenException,Injectable,NotFoundException} from '@nestjs/common';
-import {createReadStream,existsSync} from 'fs';
-import {resolve,sep} from 'path';
+import {createReadStream,existsSync,mkdirSync,writeFileSync} from 'fs';
+import {extname,resolve,sep} from 'path';
+import {randomUUID} from 'crypto';
 import {PrismaService} from '../prisma/prisma.service';
 import {AuditService} from '../audit/audit.service';
 
@@ -12,6 +13,21 @@ export class FilesService {
   const full=resolve(root,filePath);
   if(full!==root&&!full.startsWith(root+sep))throw new ForbiddenException();
   return full;
+ }
+ async saveMaterialFile(organizationId:string,originalName:string,mimeType:string,buffer:Buffer){
+  const allowed:Record<string,string[]>={
+   'application/pdf':['.pdf'],
+   'image/jpeg':['.jpg','.jpeg'],
+   'image/png':['.png'],
+   'image/webp':['.webp'],
+   'video/mp4':['.mp4'],
+   'video/webm':['.webm']
+  };
+  const ext=extname(originalName).toLowerCase();
+  if(!allowed[mimeType]?.includes(ext))throw new ForbiddenException('Недопустимый тип файла');
+  const rel=organizationId+'/'+randomUUID()+ext;
+  const full=this.path(rel);mkdirSync(resolve(full,'..'),{recursive:true});writeFileSync(full,buffer);
+  return {filePath:rel};
  }
  async material(organizationId:string,userId:string,role:string,materialId:string){
   const material=await this.prisma.material.findFirst({where:{id:materialId,courseVersion:{course:{organizationId}}}});
