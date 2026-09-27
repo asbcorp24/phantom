@@ -209,6 +209,7 @@ model Assignment {
   progress        Int              @default(0)
   certificate     Certificate?
   materialProgress MaterialProgress[]
+  attempts        TestAttempt[]
   @@index([organizationId, userId])
 }
 
@@ -247,14 +248,17 @@ model TestAttempt {
   id         String        @id @default(uuid())
   testId     String
   userId     String
+  assignmentId String
   test       Test          @relation(fields: [testId], references: [id], onDelete: Restrict)
   user       User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  assignment Assignment    @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
   status     AttemptStatus @default(IN_PROGRESS)
   score      Int?
   startedAt  DateTime      @default(now())
   finishedAt DateTime?
   answers    Json?
   @@index([userId, testId])
+  @@index([assignmentId, testId])
 }
 
 model Notification {
