@@ -42,6 +42,7 @@ export default function Login(){
   }catch(err:any){setError(err.message||'Ошибка соединения');}
   finally{setLoading(false);}
  }
+ if(setupToken&&setupSecret)return <main className="center"><form className="card" onSubmit={enableSetup}><div className="brand">PHANTOM</div><h1>Настройка двухфакторной защиты</h1><p>Добавьте секретный ключ в приложение-аутентификатор и введите полученный код.</p><label>Секретный ключ<input value={setupSecret} readOnly/></label><label>Код<input name="code" inputMode="numeric" autoComplete="one-time-code" required/></label>{error&&<p className="error">{error}</p>}<button disabled={loading}>{loading?'Проверка...':'Включить 2FA и войти'}</button></form></main>;
  if(challenge)return <main className="center"><form className="card" onSubmit={verify2fa}><div className="brand">PHANTOM</div><h1>Подтверждение входа</h1><p>Введите 6-значный код из приложения-аутентификатора.</p><label>Код<input name="code" inputMode="numeric" autoComplete="one-time-code" required/></label>{error&&<p className="error">{error}</p>}<button disabled={loading}>{loading?'Проверка...':'Подтвердить'}</button></form></main>;
  return <main className="center"><form className="card" onSubmit={submit}>
   <div className="brand">PHANTOM</div><h1>Вход</h1><p>Используйте корпоративную учётную запись.</p>
