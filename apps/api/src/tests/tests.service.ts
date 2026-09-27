@@ -50,6 +50,13 @@ export class TestsService {
    if(!test.timeLimitSec||(Date.now()-active.startedAt.getTime())/1000<=test.timeLimitSec)return {attemptId:active.id,test:safe};
    await this.prisma.testAttempt.update({where:{id:active.id},data:{status:AttemptStatus.FAILED,score:0,finishedAt:new Date()}});
   }
+  if(test.retryIntervalSec){
+   const last=await this.prisma.testAttempt.findFirst({where:{testId,userId,status:AttemptStatus.FAILED,finishedAt:{not:null}},orderBy:{finishedAt:'desc'}});
+   if(last?.finishedAt){
+    const availableAt=new Date(last.finishedAt.getTime()+test.retryIntervalSec*1000);
+    if(availableAt.getTime()>Date.now())throw new BadRequestException('Повторная попытка будет доступна '+availableAt.toISOString());
+   }
+  }
   const used=await this.prisma.testAttempt.count({where:{testId,userId}});
   if(test.maxAttempts&&used>=test.maxAttempts)throw new BadRequestException('Количество попыток исчерпано');
   const attempt=await this.prisma.testAttempt.create({data:{testId,userId}});
