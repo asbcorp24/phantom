@@ -5,12 +5,17 @@ export class CertificatesService {
  constructor(private prisma:PrismaService,private audit:AuditService){}
  listMine(organizationId:string,userId:string){return this.prisma.certificate.findMany({where:{organizationId,userId},include:{course:true,organization:{select:{name:true}}},orderBy:{issuedAt:'desc'}});}
  async issueForPassedCourse(organizationId:string,userId:string,courseId:string){
-  const assignment=await this.prisma.assignment.findFirst({where:{organizationId,userId,courseId},include:{courseVersion:{include:{tests:true}}},orderBy:{assignedAt:'desc'}});
+  const assignment=await this.prisma.assignment.findFirst({where:{organizationId,userId,courseId},orderBy:{assignedAt:'desc'}});
+  if(!assignment)throw new NotFoundException('Назначение не найдено');
+  return this.issueForAssignment(organizationId,userId,assignment.id);
+ }
+ async issueForAssignment(organizationId:string,userId:string,assignmentId:string){
+  const assignment=await this.prisma.assignment.findFirst({where:{id:assignmentId,organizationId,userId},include:{courseVersion:{include:{tests:true}}}});
   if(!assignment)throw new NotFoundException('Назначение не найдено');
   if(assignment.progress<100)return null;
   const tests=assignment.courseVersion.tests;
   if(tests.length){
-   const passed=await this.prisma.testAttempt.findMany({where:{userId,testId:{in:tests.map(t=>t.id)},status:'PASSED'},select:{testId:true},distinct:['testId']});
+   const passed=await this.prisma.testAttempt.findMany({where:{userId,assignmentId:assignment.id,testId:{in:tests.map(t=>t.id)},status:'PASSED'},select:{testId:true},distinct:['testId']});
    if(passed.length<tests.length)return null;
   }
   const existing=await this.prisma.certificate.findUnique({where:{assignmentId:assignment.id}});
