@@ -34,7 +34,7 @@ export class TestsService {
  async results(organizationId:string,testId:string){
   const test=await this.prisma.test.findFirst({where:{id:testId,courseVersion:{course:{organizationId}}}});
   if(!test)throw new NotFoundException('Тест не найден');
-  return this.prisma.testAttempt.findMany({where:{testId},select:{id:true,status:true,score:true,startedAt:true,finishedAt:true,user:{select:{id:true,firstName:true,lastName:true,email:true}}},orderBy:{startedAt:'desc'}});
+  return this.prisma.testAttempt.findMany({where:{testId},select:{id:true,assignmentId:true,status:true,score:true,startedAt:true,finishedAt:true,user:{select:{id:true,firstName:true,lastName:true,email:true}}},orderBy:{startedAt:'desc'}});
  }
  async start(organizationId:string,userId:string,assignmentId:string,testId:string){
   const a=await this.prisma.assignment.findFirst({where:{id:assignmentId,organizationId,userId,courseVersion:{tests:{some:{id:testId}}}}});
@@ -68,7 +68,7 @@ export class TestsService {
   if(!attempt)throw new NotFoundException('Активная попытка не найдена');
   if(attempt.test.timeLimitSec&&(Date.now()-attempt.startedAt.getTime())/1000>attempt.test.timeLimitSec){
    const expired=await this.prisma.testAttempt.update({where:{id:attemptId},data:{status:AttemptStatus.FAILED,score:0,finishedAt:new Date()}});
-   await this.audit.write(userId,null,'TEST_ATTEMPT_EXPIRED','TestAttempt',attemptId,'FAILED',{testId:attempt.testId});
+   await this.audit.write(userId,attempt.assignment.organizationId,'TEST_ATTEMPT_EXPIRED','TestAttempt',attemptId,'FAILED',{testId:attempt.testId,assignmentId:attempt.assignmentId});
    throw new BadRequestException('Время теста истекло');
   }
   let correct=0;
