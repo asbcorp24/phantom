@@ -11,7 +11,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 export class GroupsController {
  constructor(private service:GroupsService){}
  @Get() list(@Req() req:any){return this.service.list(req.user.organizationId);}
- @Post() create(@Req() req:any,@Body() dto:CreateGroupDto){return this.service.create(req.user.organizationId,dto.name,dto.departmentId);}
- @Post(':id/members/:userId') add(@Req() req:any,@Param('id') id:string,@Param('userId') userId:string){return this.service.addMember(req.user.organizationId,id,userId);}
- @Delete(':id/members/:userId') remove(@Req() req:any,@Param('id') id:string,@Param('userId') userId:string){return this.service.removeMember(req.user.organizationId,id,userId);}
+ @Post() create(@Req() req:any,@Body() dto:CreateGroupDto){return this.service.create(req.user.organizationId,dto.name,dto.departmentId,req.user.id);}
+ @Post(':id/members/:userId') add(@Req() req:any,@Param('id') id:string,@Param('userId') userId:string){return this.service.addMember(req.user.organizationId,id,userId,req.user.id);}
+ @Delete(':id/members/:userId') remove(@Req() req:any,@Param('id') id:string,@Param('userId') userId:string){return this.service.removeMember(req.user.organizationId,id,userId,req.user.id);}
 }
