@@ -84,7 +84,10 @@ export class TestsService {
   let certificate=null;
   if(status===AttemptStatus.PASSED){
    const assignment=await this.prisma.assignment.findFirst({where:{userId,courseVersionId:attempt.test.courseVersionId},orderBy:{assignedAt:'desc'}});
-   if(assignment)certificate=await this.certificates.issueForPassedCourse(assignment.organizationId,userId,assignment.courseId);
+   if(assignment){
+    certificate=await this.certificates.issueForPassedCourse(assignment.organizationId,userId,assignment.courseId);
+    if(certificate)await this.prisma.assignment.update({where:{id:assignment.id},data:{status:'COMPLETED',completedAt:new Date(),progress:100}});
+   }
   }
   return {...result,certificate};
  }
