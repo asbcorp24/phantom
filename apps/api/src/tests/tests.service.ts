@@ -66,7 +66,11 @@ export class TestsService {
  async submit(userId:string,attemptId:string,answers:{questionId:string;optionIds:string[]}[]){
   const attempt=await this.prisma.testAttempt.findFirst({where:{id:attemptId,userId,status:AttemptStatus.IN_PROGRESS},include:{test:{include:{questions:{include:{options:true}}}}}});
   if(!attempt)throw new NotFoundException('Активная попытка не найдена');
-  if(attempt.test.timeLimitSec&&(Date.now()-attempt.startedAt.getTime())/1000>attempt.test.timeLimitSec)throw new BadRequestException('Время теста истекло');
+  if(attempt.test.timeLimitSec&&(Date.now()-attempt.startedAt.getTime())/1000>attempt.test.timeLimitSec){
+   const expired=await this.prisma.testAttempt.update({where:{id:attemptId},data:{status:AttemptStatus.FAILED,score:0,finishedAt:new Date()}});
+   await this.audit.write(userId,null,'TEST_ATTEMPT_EXPIRED','TestAttempt',attemptId,'FAILED',{testId:attempt.testId});
+   throw new BadRequestException('Время теста истекло');
+  }
   let correct=0;
   for(const q of attempt.test.questions){
    const selected=new Set(answers.find(a=>a.questionId===q.id)?.optionIds||[]);
