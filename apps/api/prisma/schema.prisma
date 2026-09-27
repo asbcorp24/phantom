@@ -297,9 +297,11 @@ model RequestMessage {
   requestId String
   senderId  String
   text      String
+  clientMessageId String?
   createdAt DateTime       @default(now())
   request   SupportRequest @relation(fields:[requestId],references:[id],onDelete:Cascade)
   sender    User           @relation(fields:[senderId],references:[id],onDelete:Restrict)
+  @@unique([requestId,senderId,clientMessageId])
   @@index([requestId,createdAt])
 }
 
