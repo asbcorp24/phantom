@@ -39,7 +39,7 @@ export class CoursesService {
   const created=await this.prisma.courseVersion.create({data:{
    courseId,version:source.version+1,
    materials:{create:source.materials.map(m=>({title:m.title,type:m.type,content:m.content,filePath:m.filePath,sortOrder:m.sortOrder,required:m.required}))},
-   tests:{create:source.tests.map(t=>({title:t.title,passingScore:t.passingScore,timeLimitSec:t.timeLimitSec,maxAttempts:t.maxAttempts,questions:{create:t.questions.map(q=>({text:q.text,multiple:q.multiple,sortOrder:q.sortOrder,options:{create:q.options.map(o=>({text:o.text,correct:o.correct}))}}))}}))}
+   tests:{create:source.tests.map(t=>({title:t.title,passingScore:t.passingScore,timeLimitSec:t.timeLimitSec,maxAttempts:t.maxAttempts,retryIntervalSec:t.retryIntervalSec,questions:{create:t.questions.map(q=>({text:q.text,multiple:q.multiple,sortOrder:q.sortOrder,options:{create:q.options.map(o=>({text:o.text,correct:o.correct}))}}))}}))}
   },include:{materials:true,tests:{include:{questions:{include:{options:true}}}}}});
   await this.audit.write(actorId??null,organizationId,'COURSE_VERSION_CREATED','CourseVersion',created.id,'SUCCESS',{courseId,version:created.version});
   return created;
