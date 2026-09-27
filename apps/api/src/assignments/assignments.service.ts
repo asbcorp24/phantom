@@ -13,6 +13,8 @@ export class AssignmentsService {
   const course=await this.prisma.course.findFirst({where:{id:courseId,organizationId},include:{versions:{where:{status:PublishStatus.PUBLISHED},orderBy:{version:'desc'},take:1}}});
   if(!course||!course.versions[0]) throw new BadRequestException('У курса нет опубликованной версии');
   const v=course.versions[0];
+  const active=await this.prisma.assignment.findFirst({where:{organizationId,userId,courseId,status:{in:['ASSIGNED','IN_PROGRESS']}}});
+  if(active)throw new BadRequestException('У сотрудника уже есть активное назначение этой программы');
   const assignment=await this.prisma.assignment.create({data:{organizationId,userId,courseId,courseVersionId:v.id,dueAt:dueAt?new Date(dueAt):undefined}});
   await this.notifications.create(organizationId,userId,'ASSIGNMENT','Назначена программа обучения',course.title,'assignment:'+assignment.id,{assignmentId:assignment.id});
   await this.audit.write(actorId??null,organizationId,'COURSE_ASSIGNED','Assignment',assignment.id,'SUCCESS',{userId,courseId});
