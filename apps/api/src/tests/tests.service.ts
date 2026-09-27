@@ -97,7 +97,7 @@ export class TestsService {
  }
  async changeResult(organizationId:string,actorId:string,attemptId:string,status:AttemptStatus,score:number,reason:string){
   if(status===AttemptStatus.IN_PROGRESS)throw new BadRequestException('Результат можно изменить только на PASSED или FAILED');
-  const attempt=await this.prisma.testAttempt.findFirst({where:{id:attemptId,test:{courseVersion:{course:{organizationId}}}}});
+  const attempt=await this.prisma.testAttempt.findFirst({where:{id:attemptId,assignment:{organizationId}}});
   if(!attempt)throw new NotFoundException('Попытка не найдена');
   const updated=await this.prisma.testAttempt.update({where:{id:attemptId},data:{status,score,finishedAt:attempt.finishedAt??new Date()}});
   await this.audit.write(actorId,organizationId,'TEST_RESULT_CHANGED','TestAttempt',attemptId,'SUCCESS',{reason,previousStatus:attempt.status,previousScore:attempt.score,status,score});
