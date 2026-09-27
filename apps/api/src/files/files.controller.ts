@@ -1,4 +1,4 @@
-import {Controller,Get,Param,Post,Req,Res,UploadedFile,UseGuards,UseInterceptors} from '@nestjs/common';
+import {BadRequestException,Controller,Get,Param,Post,Req,Res,UploadedFile,UseGuards,UseInterceptors} from '@nestjs/common';
 import {Response} from 'express';
 import {JwtAuthGuard} from '../auth/jwt-auth.guard';
 import {RolesGuard} from '../auth/roles.guard';
@@ -15,7 +15,8 @@ export class FilesController {
  @Roles(UserRole.COMPANY_ADMIN)
  @Post('materials/upload')
  @UseInterceptors(FileInterceptor('file',{limits:{fileSize:100*1024*1024}}))
- upload(@Req() req:any,@UploadedFile() file:Express.Multer.File){
+ upload(@Req() req:any,@UploadedFile() file?:Express.Multer.File){
+  if(!file)throw new BadRequestException('Файл не передан');
   return this.service.saveMaterialFile(req.user.organizationId,file.originalname,file.mimetype,file.buffer);
  }
  @Get('materials/:id')
