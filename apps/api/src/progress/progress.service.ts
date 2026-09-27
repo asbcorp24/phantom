@@ -7,7 +7,7 @@ export class ProgressService {
  async getAssignment(organizationId:string,userId:string,id:string){
   const a=await this.prisma.assignment.findFirst({where:{id,organizationId,userId},include:{course:true,materialProgress:true,courseVersion:{include:{materials:{orderBy:{sortOrder:'asc'}},tests:{select:{id:true,title:true,passingScore:true,timeLimitSec:true,maxAttempts:true}}}}}});
   if(!a) throw new NotFoundException('Назначение не найдено');
-  return a;
+  return {...a,courseVersion:{...a.courseVersion,materials:a.courseVersion.materials.map(({filePath,...m})=>({...m,hasFile:Boolean(filePath)}))}};
  }
  async material(organizationId:string,userId:string,assignmentId:string,materialId:string,viewed:boolean,position=0){
   const a=await this.getAssignment(organizationId,userId,assignmentId);
