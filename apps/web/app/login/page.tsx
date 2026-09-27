@@ -13,6 +13,15 @@ export default function Login(){
   e.preventDefault();setError('');setLoading(true);const fd=new FormData(e.currentTarget);
   try{const r=await fetch((process.env.NEXT_PUBLIC_API_URL||'http://localhost:3001')+'/api/auth/2fa/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challengeToken:challenge,code:fd.get('code')})});const data=await r.json();if(!r.ok)throw new Error(data.message||'Неверный код');localStorage.setItem('phantom_token',data.accessToken);localStorage.setItem('phantom_user',JSON.stringify(data.user));router.push(data.user.role==='PLATFORM_OWNER'?'/admin':'/dashboard');}catch(err:any){setError(err.message||'Ошибка проверки');}finally{setLoading(false);}
  }
+ async function enableSetup(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();setError('');setLoading(true);const fd=new FormData(e.currentTarget);
+  try{
+   const r=await fetch((process.env.NEXT_PUBLIC_API_URL||'http://localhost:3001')+'/api/auth/2fa/enable-token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({setupToken,code:fd.get('code')})});
+   const data=await r.json();if(!r.ok)throw new Error(data.message||'Неверный код');
+   localStorage.setItem('phantom_token',data.accessToken);localStorage.setItem('phantom_user',JSON.stringify(data.user));
+   router.push(data.user.role==='PLATFORM_OWNER'?'/admin':'/dashboard');
+  }catch(err:any){setError(err.message||'Ошибка настройки');}finally{setLoading(false);}
+ }
  async function submit(e:FormEvent<HTMLFormElement>){
   e.preventDefault(); setError(''); setLoading(true);
   const fd=new FormData(e.currentTarget);
