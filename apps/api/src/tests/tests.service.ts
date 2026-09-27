@@ -38,7 +38,10 @@ export class TestsService {
  async start(organizationId:string,userId:string,assignmentId:string,testId:string){
   const a=await this.prisma.assignment.findFirst({where:{id:assignmentId,organizationId,userId,courseVersion:{tests:{some:{id:testId}}}}});
   if(!a)throw new ForbiddenException();
-  if(a.progress<100)throw new BadRequestException('Сначала завершите обязательные материалы');
+  if(a.progress<100){
+   const required=await this.prisma.material.count({where:{courseVersionId:a.courseVersionId,required:true}});
+   if(required>0)throw new BadRequestException('Сначала завершите обязательные материалы');
+  }
   const test=await this.prisma.test.findUnique({where:{id:testId}});
   if(!test)throw new NotFoundException();
   const active=await this.prisma.testAttempt.findFirst({where:{testId,userId,status:AttemptStatus.IN_PROGRESS},orderBy:{startedAt:'desc'}});
