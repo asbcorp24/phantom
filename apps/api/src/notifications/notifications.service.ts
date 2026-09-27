@@ -25,10 +25,12 @@ export class NotificationsService {
    if(days<0){
     await this.prisma.assignment.update({where:{id:a.id},data:{status:'OVERDUE'}});
     const key='overdue:'+a.id;
-    try{await this.create(a.organizationId,a.userId,'OVERDUE','Срок обучения истёк',a.course.title,key,{assignmentId:a.id});created++;}catch{}
+    const exists=await this.prisma.notification.findUnique({where:{dedupeKey:key}});
+    if(!exists){await this.create(a.organizationId,a.userId,'OVERDUE','Срок обучения истёк',a.course.title,key,{assignmentId:a.id});created++;}
    } else if([7,3,1].includes(days)){
     const key='deadline:'+a.id+':'+days;
-    try{await this.create(a.organizationId,a.userId,'DEADLINE','До окончания обучения '+days+' дн.',a.course.title,key,{assignmentId:a.id,days});created++;}catch{}
+    const exists=await this.prisma.notification.findUnique({where:{dedupeKey:key}});
+    if(!exists){await this.create(a.organizationId,a.userId,'DEADLINE','До окончания обучения '+days+' дн.',a.course.title,key,{assignmentId:a.id,days});created++;}
    }
   }
   return {checked:assignments.length,created};
