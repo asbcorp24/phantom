@@ -36,4 +36,12 @@ export class RequestsService {
   if(user.role===UserRole.EMPLOYEE)throw new ForbiddenException();
   return this.prisma.supportRequest.update({where:{id},data:{status:RequestStatus.CLOSED}});
  }
+ async reassign(organizationId:string,user:any,id:string,curatorId:string){
+  if(user.role!==UserRole.COMPANY_ADMIN)throw new ForbiddenException();
+  await this.get(organizationId,user,id);
+  const curator=await this.prisma.user.findFirst({where:{id:curatorId,organizationId,role:UserRole.CURATOR,status:'ACTIVE'}});
+  if(!curator)throw new NotFoundException('Куратор не найден');
+  return this.prisma.supportRequest.update({where:{id},data:{curatorId,status:RequestStatus.IN_PROGRESS}});
+ }
+
 }
