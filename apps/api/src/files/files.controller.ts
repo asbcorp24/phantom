@@ -23,6 +23,8 @@ export class FilesController {
  async material(@Req() req:any,@Res() res:Response,@Param('id') id:string){
   const file=await this.service.material(req.user.organizationId,req.user.id,req.user.role,id);
   res.setHeader('Content-Disposition','inline');
+  res.setHeader('Cache-Control','private, no-store');
+  res.setHeader('X-Content-Type-Options','nosniff');
   file.stream.pipe(res);
  }
 }
