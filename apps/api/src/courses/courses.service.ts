@@ -21,6 +21,8 @@ export class CoursesService {
   const version=await this.ownedVersion(organizationId,versionId);
   if(version.status!==PublishStatus.DRAFT) throw new BadRequestException('Материалы опубликованной версии изменять нельзя');
   const count=await this.prisma.material.count({where:{courseVersionId:versionId}});
+  if(dto.filePath&&(dto.filePath.includes('..')||dto.filePath.startsWith('/')||dto.filePath.startsWith('\\')))throw new BadRequestException('Недопустимый путь к файлу');
+  if(['PDF','IMAGE'].includes(dto.type)&&!dto.filePath)throw new BadRequestException('Для файлового материала требуется приватный файл');
   return this.prisma.material.create({data:{courseVersionId:versionId,title:dto.title,type:dto.type,content:dto.content,filePath:dto.filePath,required:dto.required??true,sortOrder:count}});
  }
  async publish(organizationId:string,versionId:string,actorId?:string){
