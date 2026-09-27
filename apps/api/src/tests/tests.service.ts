@@ -64,7 +64,7 @@ export class TestsService {
   return {attemptId:attempt.id,test:safe};
  }
  async submit(userId:string,attemptId:string,answers:{questionId:string;optionIds:string[]}[]){
-  const attempt=await this.prisma.testAttempt.findFirst({where:{id:attemptId,userId,status:AttemptStatus.IN_PROGRESS},include:{test:{include:{questions:{include:{options:true}}}}}});
+  const attempt=await this.prisma.testAttempt.findFirst({where:{id:attemptId,userId,status:AttemptStatus.IN_PROGRESS},include:{assignment:{include:{course:true}},test:{include:{questions:{include:{options:true}}}}}});
   if(!attempt)throw new NotFoundException('Активная попытка не найдена');
   if(attempt.test.timeLimitSec&&(Date.now()-attempt.startedAt.getTime())/1000>attempt.test.timeLimitSec){
    const expired=await this.prisma.testAttempt.update({where:{id:attemptId},data:{status:AttemptStatus.FAILED,score:0,finishedAt:new Date()}});
@@ -80,16 +80,16 @@ export class TestsService {
   const score=attempt.test.questions.length?Math.round(correct*100/attempt.test.questions.length):0;
   const status=score>=attempt.test.passingScore?AttemptStatus.PASSED:AttemptStatus.FAILED;
   const result=await this.prisma.testAttempt.update({where:{id:attemptId},data:{answers:answers as any,score,status,finishedAt:new Date()},select:{id:true,status:true,score:true,finishedAt:true}});
-  const assignmentForNotification=await this.prisma.assignment.findFirst({where:{userId,courseVersionId:attempt.test.courseVersionId},include:{course:true},orderBy:{assignedAt:'desc'}});
+  const assignmentForNotification=attempt.assignment;
   if(assignmentForNotification){
    const passed=status===AttemptStatus.PASSED;
    await this.notifications.create(assignmentForNotification.organizationId,userId,passed?'TEST_PASSED':'TEST_FAILED',passed?'Тест пройден':'Тест не пройден',assignmentForNotification.course.title,'attempt:'+attemptId,{attemptId,testId:attempt.testId,score});
   }
   let certificate=null;
   if(status===AttemptStatus.PASSED){
-   const assignment=await this.prisma.assignment.findFirst({where:{userId,courseVersionId:attempt.test.courseVersionId},orderBy:{assignedAt:'desc'}});
+   const assignment=attempt.assignment;
    if(assignment){
-    certificate=await this.certificates.issueForPassedCourse(assignment.organizationId,userId,assignment.courseId);
+    certificate=await this.certificates.issueForAssignment(assignment.organizationId,userId,assignment.id);
     if(certificate)await this.prisma.assignment.update({where:{id:assignment.id},data:{status:'COMPLETED',completedAt:new Date(),progress:100}});
    }
   }
