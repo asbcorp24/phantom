@@ -18,6 +18,16 @@ export class AssignmentsService {
   await this.audit.write(actorId??null,organizationId,'COURSE_ASSIGNED','Assignment',assignment.id,'SUCCESS',{userId,courseId});
   return assignment;
  }
+ async createForGroup(organizationId:string,groupId:string,courseId:string,dueAt?:string,actorId?:string){
+  const group=await this.prisma.group.findFirst({where:{id:groupId,organizationId},include:{members:true}});
+  if(!group) throw new NotFoundException('Группа не найдена');
+  const assignments=[];
+  for(const member of group.members){
+   assignments.push(await this.create(organizationId,member.userId,courseId,dueAt,actorId));
+  }
+  return {groupId,count:assignments.length,assignments};
+ }
+
  listForUser(organizationId:string,userId:string){
   return this.prisma.assignment.findMany({where:{organizationId,userId},include:{course:true,courseVersion:{include:{materials:{orderBy:{sortOrder:'asc'}}}}},orderBy:{assignedAt:'desc'}});
  }
