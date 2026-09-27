@@ -23,7 +23,8 @@ export class AssignmentsService {
   if(!group) throw new NotFoundException('Группа не найдена');
   const assignments=[];
   for(const member of group.members){
-   assignments.push(await this.create(organizationId,member.userId,courseId,dueAt,actorId));
+   const existing=await this.prisma.assignment.findFirst({where:{organizationId,userId:member.userId,courseId,status:{in:['ASSIGNED','IN_PROGRESS']}}});
+   if(!existing)assignments.push(await this.create(organizationId,member.userId,courseId,dueAt,actorId));
   }
   return {groupId,count:assignments.length,assignments};
  }
