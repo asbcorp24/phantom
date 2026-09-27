@@ -5,10 +5,11 @@ import { CertificatesService } from '../certificates/certificates.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class TestsService {
- constructor(private prisma:PrismaService,private certificates:CertificatesService,private notifications:NotificationsService){}
+ constructor(private prisma:PrismaService,private certificates:CertificatesService,private notifications:NotificationsService,private audit:AuditService){}
  async create(organizationId:string,versionId:string,dto:CreateTestDto){
   const v=await this.prisma.courseVersion.findFirst({where:{id:versionId,course:{organizationId}}});
   if(!v)throw new NotFoundException('Версия курса не найдена');
@@ -87,4 +88,13 @@ export class TestsService {
   }
   return {...result,certificate};
  }
+ async changeResult(organizationId:string,actorId:string,attemptId:string,status:AttemptStatus,score:number,reason:string){
+  if(status===AttemptStatus.IN_PROGRESS)throw new BadRequestException('Результат можно изменить только на PASSED или FAILED');
+  const attempt=await this.prisma.testAttempt.findFirst({where:{id:attemptId,test:{courseVersion:{course:{organizationId}}}}});
+  if(!attempt)throw new NotFoundException('Попытка не найдена');
+  const updated=await this.prisma.testAttempt.update({where:{id:attemptId},data:{status,score,finishedAt:attempt.finishedAt??new Date()}});
+  await this.audit.write(actorId,organizationId,'TEST_RESULT_CHANGED','TestAttempt',attemptId,'SUCCESS',{reason,previousStatus:attempt.status,previousScore:attempt.score,status,score});
+  return updated;
+ }
+
 }
