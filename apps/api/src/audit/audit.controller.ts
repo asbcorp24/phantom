@@ -8,6 +8,8 @@ import { AuditService } from './audit.service';
 @Controller('audit')
 export class AuditController {
  constructor(private service:AuditService){}
+ @Roles(UserRole.PLATFORM_OWNER) @Get('global')
+ global(){return this.service.listAll();}
  @Roles(UserRole.COMPANY_ADMIN) @Get()
  list(@Req() req:any){return this.service.list(req.user.organizationId);}
 }
