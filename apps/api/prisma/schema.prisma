@@ -220,6 +220,7 @@ model Test {
   passingScore    Int
   timeLimitSec    Int?
   maxAttempts     Int?
+  retryIntervalSec Int?
   questions       Question[]
   attempts        TestAttempt[]
 }
