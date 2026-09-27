@@ -4,10 +4,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CertificatesService } from '../certificates/certificates.service';
 import { CreateTestDto } from './dto/create-test.dto';
 import { CreateQuestionDto } from './dto/create-question.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TestsService {
- constructor(private prisma:PrismaService,private certificates:CertificatesService){}
+ constructor(private prisma:PrismaService,private certificates:CertificatesService,private notifications:NotificationsService){}
  async create(organizationId:string,versionId:string,dto:CreateTestDto){
   const v=await this.prisma.courseVersion.findFirst({where:{id:versionId,course:{organizationId}}});
   if(!v)throw new NotFoundException('Версия курса не найдена');
@@ -64,6 +65,11 @@ export class TestsService {
   const score=attempt.test.questions.length?Math.round(correct*100/attempt.test.questions.length):0;
   const status=score>=attempt.test.passingScore?AttemptStatus.PASSED:AttemptStatus.FAILED;
   const result=await this.prisma.testAttempt.update({where:{id:attemptId},data:{answers:answers as any,score,status,finishedAt:new Date()},select:{id:true,status:true,score:true,finishedAt:true}});
+  const assignmentForNotification=await this.prisma.assignment.findFirst({where:{userId,courseVersionId:attempt.test.courseVersionId},include:{course:true},orderBy:{assignedAt:'desc'}});
+  if(assignmentForNotification){
+   const passed=status===AttemptStatus.PASSED;
+   await this.notifications.create(assignmentForNotification.organizationId,userId,passed?'TEST_PASSED':'TEST_FAILED',passed?'Тест пройден':'Тест не пройден',assignmentForNotification.course.title,'attempt:'+attemptId,{attemptId,testId:attempt.testId,score});
+  }
   let certificate=null;
   if(status===AttemptStatus.PASSED){
    const assignment=await this.prisma.assignment.findFirst({where:{userId,courseVersionId:attempt.test.courseVersionId},orderBy:{assignedAt:'desc'}});
