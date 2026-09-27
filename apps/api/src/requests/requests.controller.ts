@@ -10,6 +10,6 @@ export class RequestsController {
  @Get() list(@Req() req:any){return this.service.list(req.user.organizationId,req.user);}
  @Post() create(@Req() req:any,@Body() dto:CreateRequestDto){return this.service.create(req.user.organizationId,req.user.id,dto.subject,dto.message);}
  @Get(':id') get(@Req() req:any,@Param('id') id:string){return this.service.get(req.user.organizationId,req.user,id);}
- @Post(':id/messages') message(@Req() req:any,@Param('id') id:string,@Body() dto:MessageDto){return this.service.message(req.user.organizationId,req.user,id,dto.text);}
+ @Post(':id/messages') message(@Req() req:any,@Param('id') id:string,@Body() dto:MessageDto){return this.service.message(req.user.organizationId,req.user,id,dto.text,dto.clientMessageId);}
  @Post(':id/close') close(@Req() req:any,@Param('id') id:string){return this.service.close(req.user.organizationId,req.user,id);}
 }
